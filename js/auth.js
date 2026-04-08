@@ -1,8 +1,8 @@
 // auth.js - Autenticación y gestión de roles en Biored
 
 // Configuración de Supabase (cambiar por tus credenciales)
-const SUPABASE_URL = https://tvsxrxvfeosngxadudvq.supabase.co;   // REEMPLAZAR
-const SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2c3hyeHZmZW9zbmd4YWR1ZHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MTMwMzgsImV4cCI6MjA5MTE4OTAzOH0.INt0Dw-YmiqLKXpRasZsZolnBhfNjkg3q5j33snZuvY;                // REEMPLAZAR
+const SUPABASE_URL = 'https://tvsxrxvfeosngxadudvq.supabase.co';   // REEMPLAZAR
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2c3hyeHZmZW9zbmd4YWR1ZHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MTMwMzgsImV4cCI6MjA5MTE4OTAzOH0.INt0Dw-YmiqLKXpRasZsZolnBhfNjkg3q5j33snZuvY';                // REEMPLAZAR
 
 // Inicializar cliente de Supabase
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
