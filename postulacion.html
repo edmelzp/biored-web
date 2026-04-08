@@ -1,1 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biored - Postulación y test vocacional</title>
+    <link rel="stylesheet" href="css/estilo.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <header>
+        <h1>🌿 BIORED</h1>
+        <div class="tagline">Completa tu postulación</div>
+    </header>
+    <div class="container">
+        <div class="card" id="postulacionCard">
+            <div id="message" style="display: none;"></div>
+            <h2>Datos personales</h2>
+            <div class="form-group">
+                <label>Edad</label>
+                <input type="number" id="edad" min="16" max="120">
+            </div>
+            <div class="form-group">
+                <label>Zona / Barrio / Ciudad</label>
+                <input type="text" id="zona" placeholder="Ej. Barrio Las Flores, Ciudad X">
+            </div>
+            <div class="form-group">
+                <label>Intereses o habilidades (opcional)</label>
+                <textarea id="intereses" rows="2" placeholder="Cuéntanos qué te gusta hacer o en qué destacas"></textarea>
+            </div>
 
+            <h2>Test vocacional</h2>
+            <p>Responde cada pregunta del 1 al 5, donde 1 es "Muy en desacuerdo" y 5 es "Muy de acuerdo".</p>
+
+            <!-- Las 12 preguntas -->
+            <div id="preguntas"></div>
+
+            <button id="enviarTest" class="btn" style="width: 100%; margin-top: 1rem;">Enviar y convertirme en miembro</button>
+        </div>
+    </div>
+    <footer>
+        Biored – Red Viva
+    </footer>
+
+    <script>
+        // Configuración de Supabase (cambia por tus credenciales reales)
+        const SUPABASE_URL = 'https://tu-proyecto.supabase.co';  // REEMPLAZAR
+        const SUPABASE_ANON_KEY = 'tu-anon-key';               // REEMPLAZAR
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Definición de preguntas y áreas que impacta
+        const preguntas = [
+            { texto: "Me gusta analizar problemas, buscar información y proponer planes.", areas: ["C1","C5"] },
+            { texto: "Prefiero trabajar con mis manos, hacer reparaciones o fabricar objetos.", areas: ["C2","C4"] },
+            { texto: "Disfruto interactuar con personas, vender, negociar o intercambiar.", areas: ["C3","C6"] },
+            { texto: "Me siento cómodo manejando tecnología, computadoras o aplicaciones.", areas: ["C5","C1"] },
+            { texto: "Me gusta enseñar a otros, explicar conceptos y ver cómo aprenden.", areas: ["C7","C6"] },
+            { texto: "Tengo facilidad para organizar rutas, horarios y mover cosas de un lugar a otro.", areas: ["C4","C2"] },
+            { texto: "Me interesa conocer otras organizaciones, hacer alianzas y trabajar en red.", areas: ["C6","C3"] },
+            { texto: "Disfruto llevar registros, contar inventarios, hacer cálculos y presupuestos.", areas: ["C1","C5","C3"] },
+            { texto: "Me preocupo por la seguridad, revisar riesgos y cuidar a los demás.", areas: ["C1","C4"] },
+            { texto: "Tengo paciencia para formar a personas nuevas y acompañar su proceso.", areas: ["C7","C1"] },
+            { texto: "Me gusta producir alimentos, jabones o artículos ecológicos de forma artesanal.", areas: ["C2"] },
+            { texto: "Me motiva participar en asambleas, tomar decisiones colectivas y organizar equipos.", areas: ["C1","C6","C7"] }
+        ];
+
+        // Inicializar el DOM con las preguntas
+        function cargarPreguntas() {
+            const contenedor = document.getElementById('preguntas');
+            contenedor.innerHTML = '';
+            preguntas.forEach((p, idx) => {
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                div.innerHTML = `
+                    <label>${idx+1}. ${p.texto}</label>
+                    <select id="preg_${idx}" class="pregunta">
+                        <option value="1">1 - Muy en desacuerdo</option>
+                        <option value="2">2 - En desacuerdo</option>
+                        <option value="3">3 - Neutral</option>
+                        <option value="4">4 - De acuerdo</option>
+                        <option value="5">5 - Muy de acuerdo</option>
+                    </select>
+                `;
+                contenedor.appendChild(div);
+            });
+        }
+
+        // Calcular puntajes por área
+        function calcularPuntajes() {
+            const puntajes = { C1:0, C2:0, C3:0, C4:0, C5:0, C6:0, C7:0 };
+            for (let i = 0; i < preguntas.length; i++) {
+                const respuesta = parseInt(document.getElementById(`preg_${i}`).value);
+                const areas = preguntas[i].areas;
+                areas.forEach(area => {
+                    puntajes[area] += respuesta;
+                });
+            }
+            return puntajes;
+        }
+
+        // Obtener dos áreas con mayor puntaje
+        function sugerirAreas(puntajes) {
+            const sorted = Object.entries(puntajes).sort((a,b) => b[1] - a[1]);
+            return [sorted[0][0], sorted[1][0]];
+        }
+
+        // Mostrar mensajes
+        const messageDiv = document.getElementById('message');
+        function showMessage(text, isError = true) {
+            messageDiv.textContent = text;
+            messageDiv.className = isError ? 'alert alert-error' : 'alert alert-success';
+            messageDiv.style.display = 'block';
+            setTimeout(() => { messageDiv.style.display = 'none'; }, 5000);
+        }
+
+        // Convertir externo en interno (usando la función de auth.js, pero la replicamos aquí)
+        async function convertirEnInterno(userId, areaInicio, edad, zona, intereses) {
+            try {
+                // 1. Actualizar rol en usuarios
+                const { error: updateError } = await supabase
+                    .from('usuarios')
+                    .update({ rol: 'interno' })
+                    .eq('id', userId);
+                if (updateError) throw updateError;
+
+                // 2. Insertar en miembros
+                const { error: insertMiembro } = await supabase
+                    .from('miembros')
+                    .insert([{
+                        id: userId,
+                        edad: edad || null,
+                        zona: zona || null,
+                        intereses: intereses || null,
+                        area_inicio: areaInicio,
+                        fase_actual: 'F',
+                        fecha_ingreso: new Date().toISOString().split('T')[0]
+                    }]);
+                if (insertMiembro) throw insertMiembro;
+
+                // 3. Insertar en competencias
+                const { error: insertComp } = await supabase
+                    .from('competencias')
+                    .insert([{
+                        usuario_id: userId,
+                        area: areaInicio,
+                        fase: 'F',
+                        fecha_inicio_fase: new Date().toISOString().split('T')[0]
+                    }]);
+                if (insertComp) throw insertComp;
+
+                return { success: true };
+            } catch (error) {
+                console.error(error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Evento del botón enviar
+        document.getElementById('enviarTest').onclick = async () => {
+            const edad = document.getElementById('edad').value;
+            const zona = document.getElementById('zona').value.trim();
+            const intereses = document.getElementById('intereses').value.trim();
+
+            if (!edad || edad < 16) {
+                showMessage('Ingresa una edad válida (mayor de 16 años)');
+                return;
+            }
+            if (!zona) {
+                showMessage('Indica tu zona de residencia');
+                return;
+            }
+
+            // Verificar que el usuario esté logueado
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                showMessage('Debes iniciar sesión antes de postularte. Ve a login.html');
+                return;
+            }
+            const userId = session.user.id;
+
+            // Calcular puntajes y sugerir áreas
+            const puntajes = calcularPuntajes();
+            const [area1, area2] = sugerirAreas(puntajes);
+
+            // Mostrar sugerencia y preguntar al usuario
+            const areaElegida = confirm(`Según tus respuestas, las áreas que más se ajustan son: ${area1} (${nombreArea(area1)}) y ${area2} (${nombreArea(area2)}). ¿Quieres empezar en ${area1}? (Aceptar = ${area1}, Cancelar = ${area2})`);
+            const areaFinal = areaElegida ? area1 : area2;
+
+            // Guardar respuestas del test
+            const respuestasArray = [];
+            for (let i = 0; i < preguntas.length; i++) {
+                respuestasArray.push(parseInt(document.getElementById(`preg_${i}`).value));
+            }
+            const { error: testError } = await supabase
+                .from('test_respuestas')
+                .insert([{
+                    usuario_id: userId,
+                    preguntas: respuestasArray,
+                    puntajes: puntajes,
+                    areas_sugeridas: [area1, area2],
+                    fecha: new Date()
+                }]);
+            if (testError) console.error('Error guardando test:', testError);
+
+            // Convertir en interno
+            const resultado = await convertirEnInterno(userId, areaFinal, edad, zona, intereses);
+            if (resultado.success) {
+                showMessage(`¡Felicidades! Ahora eres miembro de Biored en el área ${areaFinal} (Fase F). Serás redirigido al dashboard.`, false);
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 2000);
+            } else {
+                showMessage('Error al convertirte en miembro: ' + resultado.error);
+            }
+        };
+
+        // Función auxiliar para mostrar nombre de área
+        function nombreArea(codigo) {
+            const nombres = {
+                C1: 'Diagnóstico y Planificación',
+                C2: 'Producción',
+                C3: 'Comercialización',
+                C4: 'Distribución y Logística',
+                C5: 'Gestión Digital y Datos',
+                C6: 'Articulación Territorial',
+                C7: 'Formación y Sistematización'
+            };
+            return nombres[codigo] || codigo;
+        }
+
+        // Cargar preguntas al iniciar
+        document.addEventListener('DOMContentLoaded', cargarPreguntas);
+    </script>
+</body>
+</html>
