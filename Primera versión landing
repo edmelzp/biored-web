@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Biored - Red Viva</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #F8F9FA;
+            color: #1E3A8A;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        header {
+            background: #2E7D32;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            border-radius: 0 0 1rem 1rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+        }
+        .tagline {
+            font-size: 1.2rem;
+            margin-top: 0.5rem;
+            color: #C8E6C9;
+        }
+        .section {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 6px solid #17A2B8;
+        }
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+        .btn {
+            display: inline-block;
+            background: #1E3A8A;
+            color: white;
+            padding: 0.8rem 1.8rem;
+            border-radius: 2rem;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #1E3A8A;
+            color: #1E3A8A;
+        }
+        .btn:hover {
+            transform: scale(1.02);
+            background: #0F2B6D;
+        }
+        footer {
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .status {
+            background: #E8F5E9;
+            border-left-color: #2E7D32;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🌿 BIORED</h1>
+        <div class="tagline">La red viva que produce, conecta y cuida</div>
+    </header>
+    <div class="container">
+        <div class="section">
+            <h2>¿Qué hacemos?</h2>
+            <p>Biored es una economía colectiva donde producimos bienes ecológicos, intercambiamos mediante trueque y moneda social, y distribuimos solidariamente. Somos una red de personas que priorizan la vida y la cooperación.</p>
+        </div>
+        <div class="section">
+            <h2>¿Por qué lo hacemos?</h2>
+            <p>Porque creemos que otra economía es posible: sin explotación, sin acumulación individual, con soberanía alimentaria y tecnología al servicio de la comunidad.</p>
+        </div>
+        <div class="section">
+            <h2>¿Para qué lo hacemos?</h2>
+            <p>Para construir bienestar colectivo, un retiro digno para nuestros miembros y un modelo replicable que inspire a otras comunidades.</p>
+        </div>
+        <div class="section status">
+            <h3>✅ Estado del ecosistema</h3>
+            <p>Conexión con Supabase: <strong id="supabase-status">Verificando...</strong></p>
+            <p>Próximo paso: Catálogo y registro de usuarios.</p>
+        </div>
+        <div class="buttons">
+            <a href="#" class="btn">🛒 Ver catálogo (pronto)</a>
+            <a href="#" class="btn btn-outline">🌱 Únete a Biored (pronto)</a>
+        </div>
+    </div>
+    <footer>
+        Biored – Red Viva | contacto@biored.coop (próximamente)
+    </footer>
+
+    <!-- Incluir Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Configuración de Supabase (cambiar por tus credenciales)
+        // Las obtendrás en el siguiente paso
+        const SUPABASE_URL = 'https://tvsxrxvfeosngxadudvq.supabase.co';   // REEMPLAZAR
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2c3hyeHZmZW9zbmd4YWR1ZHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MTMwMzgsImV4cCI6MjA5MTE4OTAzOH0.INt0Dw-YmiqLKXpRasZsZolnBhfNjkg3q5j33snZuvY';                // REEMPLAZAR
+        
+        async function testConnection() {
+            const statusElement = document.getElementById('supabase-status');
+            try {
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                const { data, error } = await supabase.from('usuarios').select('count', { count: 'exact', head: true });
+                if (error) throw error;
+                statusElement.textContent = '✅ Conectado a Supabase';
+                statusElement.style.color = '#2E7D32';
+            } catch (err) {
+                console.error(err);
+                statusElement.textContent = '❌ No conectado (configura las credenciales)';
+                statusElement.style.color = '#C45A2C';
+            }
+        }
+        
+        // Llamar cuando el DOM cargue
+        document.addEventListener('DOMContentLoaded', () => {
+            if (SUPABASE_URL.includes('tu-proyecto')) {
+                document.getElementById('supabase-status').textContent = '⚠️ Configura tus credenciales de Supabase en el código';
+            } else {
+                testConnection();
+            }
+        });
+    </script>
+</body>
+</html>
