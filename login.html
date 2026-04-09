@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biored - Acceder</title>
     <link rel="stylesheet" href="css/estilo.css">
-    
 </head>
 <body>
     <header>
@@ -53,77 +52,90 @@
         Biored – Red Viva
     </footer>
 
+    <!-- Cargar Supabase JS y luego el script principal -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Configuración de Supabase - REEMPLAZA ESTOS VALORES
-        const SUPABASE_URL = 'https://tvsxrxvfeosngxadudvq.supabase.co';   // ← Cámbialo
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2c3hyeHZmZW9zbmd4YWR1ZHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MTMwMzgsImV4cCI6MjA5MTE4OTAzOH0.INt0Dw-YmiqLKXpRasZsZolnBhfNjkg3q5j33snZuvY';                // ← Cámbialo
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        const messageDiv = document.getElementById('message');
-        function showMessage(text, isError) {
-            if (!messageDiv) return;
-            messageDiv.textContent = text;
-            messageDiv.className = isError ? 'alert alert-error' : 'alert alert-success';
-            messageDiv.style.display = 'block';
-            setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
-        }
-
-        // Registro
-        document.getElementById('doRegister').onclick = async () => {
-            const nombre = document.getElementById('regNombre').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const password = document.getElementById('regPassword').value;
-            if (!nombre || !email || !password) {
-                showMessage('Completa todos los campos', true);
+        // Esperar a que el DOM y Supabase estén listos
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificar que supabase esté disponible
+            if (typeof window.supabase === 'undefined') {
+                console.error('Supabase no cargó correctamente');
+                document.getElementById('message').textContent = 'Error técnico: librería no cargada. Recarga la página.';
+                document.getElementById('message').style.display = 'block';
                 return;
             }
-            if (password.length < 6) {
-                showMessage('La contraseña debe tener al menos 6 caracteres', true);
-                return;
-            }
-            try {
-                const { data, error } = await supabase.auth.signUp({
-                    email, password,
-                    options: { data: { nombre, rol: 'externo' } }
-                });
-                if (error) throw error;
-                const { error: insertError } = await supabase
-                    .from('usuarios')
-                    .insert([{ id: data.user.id, email, nombre, rol: 'externo' }]);
-                if (insertError) throw insertError;
-                showMessage('Registro exitoso. Ahora inicia sesión.', false);
-                document.getElementById('regNombre').value = '';
-                document.getElementById('regEmail').value = '';
-                document.getElementById('regPassword').value = '';
-            } catch (err) {
-                showMessage('Error: ' + err.message, true);
-            }
-        };
 
-        // Inicio de sesión
-        document.getElementById('doLogin').onclick = async () => {
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            if (!email || !password) {
-                showMessage('Ingresa email y contraseña', true);
-                return;
+            // Configuración de Supabase - REEMPLAZA ESTOS VALORES
+            const SUPABASE_URL = 'https://tvsxrxvfeosngxadudvq.supabase.co';   // ← Cámbialo
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2c3hyeHZmZW9zbmd4YWR1ZHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MTMwMzgsImV4cCI6MjA5MTE4OTAzOH0.INt0Dw-YmiqLKXpRasZsZolnBhfNjkg3q5j33snZuvY';                // ← Cámbialo
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            const messageDiv = document.getElementById('message');
+            function showMessage(text, isError) {
+                if (!messageDiv) return;
+                messageDiv.textContent = text;
+                messageDiv.className = isError ? 'alert alert-error' : 'alert alert-success';
+                messageDiv.style.display = 'block';
+                setTimeout(() => { messageDiv.style.display = 'none'; }, 4000);
             }
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) throw error;
-                const { data: userData, error: rolError } = await supabase
-                    .from('usuarios')
-                    .select('rol')
-                    .eq('id', data.user.id)
-                    .single();
-                if (rolError) throw rolError;
-                if (userData.rol === 'admin') window.location.href = 'admin.html';
-                else if (userData.rol === 'interno') window.location.href = 'dashboard.html';
-                else window.location.href = 'catalogo.html';
-            } catch (err) {
-                showMessage('Error al iniciar sesión: ' + err.message, true);
-            }
-        };
+
+            // Registro
+            document.getElementById('doRegister').onclick = async () => {
+                const nombre = document.getElementById('regNombre').value.trim();
+                const email = document.getElementById('regEmail').value.trim();
+                const password = document.getElementById('regPassword').value;
+                if (!nombre || !email || !password) {
+                    showMessage('Completa todos los campos', true);
+                    return;
+                }
+                if (password.length < 6) {
+                    showMessage('La contraseña debe tener al menos 6 caracteres', true);
+                    return;
+                }
+                try {
+                    const { data, error } = await supabase.auth.signUp({
+                        email, password,
+                        options: { data: { nombre, rol: 'externo' } }
+                    });
+                    if (error) throw error;
+                    const { error: insertError } = await supabase
+                        .from('usuarios')
+                        .insert([{ id: data.user.id, email, nombre, rol: 'externo' }]);
+                    if (insertError) throw insertError;
+                    showMessage('Registro exitoso. Ahora inicia sesión.', false);
+                    document.getElementById('regNombre').value = '';
+                    document.getElementById('regEmail').value = '';
+                    document.getElementById('regPassword').value = '';
+                } catch (err) {
+                    showMessage('Error: ' + err.message, true);
+                }
+            };
+
+            // Inicio de sesión
+            document.getElementById('doLogin').onclick = async () => {
+                const email = document.getElementById('loginEmail').value.trim();
+                const password = document.getElementById('loginPassword').value;
+                if (!email || !password) {
+                    showMessage('Ingresa email y contraseña', true);
+                    return;
+                }
+                try {
+                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                    if (error) throw error;
+                    const { data: userData, error: rolError } = await supabase
+                        .from('usuarios')
+                        .select('rol')
+                        .eq('id', data.user.id)
+                        .single();
+                    if (rolError) throw rolError;
+                    if (userData.rol === 'admin') window.location.href = 'admin.html';
+                    else if (userData.rol === 'interno') window.location.href = 'dashboard.html';
+                    else window.location.href = 'catalogo.html';
+                } catch (err) {
+                    showMessage('Error al iniciar sesión: ' + err.message, true);
+                }
+            };
+        });
     </script>
 </body>
 </html>
